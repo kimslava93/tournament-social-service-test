@@ -50,7 +50,7 @@ describe('Players test', () => {
         points: 500,
       };
       chai.request(server)
-        .get(`/users/new?id=${player.id}&points=${player.points}`)
+        .get(`/new?id=${player.id}&points=${player.points}`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -64,7 +64,7 @@ describe('Players test', () => {
         points: 500,
       };
       chai.request(server)
-        .get(`/users/new?points=${player.points}`)
+        .get(`/new?points=${player.points}`)
         .end((err, res) => {
           res.should.have.status(422);
           done();
@@ -75,7 +75,7 @@ describe('Players test', () => {
         id: 1,
       };
       chai.request(server)
-        .get(`/users/new?id=${player.id}`)
+        .get(`/new?id=${player.id}`)
         .end((err, res) => {
           res.should.have.status(422);
           done();
@@ -87,7 +87,7 @@ describe('Players test', () => {
         points: -16,
       };
       chai.request(server)
-        .get(`/users/new?id=${player.id}&points=${player.points}`)
+        .get(`/new?id=${player.id}&points=${player.points}`)
         .end((err, res) => {
           res.should.have.status(422);
           done();
@@ -105,7 +105,7 @@ describe('Players test', () => {
       newPlayer.save()
         .then((player) => {
           chai.request(server)
-            .get(`/users/take?playerId=${player.id}&points=${pointsToTake}`)
+            .get(`/take?playerId=${player.id}&points=${pointsToTake}`)
             .end((err, res) => {
               res.should.have.status(200);
               res.body.should.be.a('object');
@@ -124,7 +124,7 @@ describe('Players test', () => {
       newPlayer.save()
         .then((player) => {
           chai.request(server)
-            .get(`/users/take?playerId=${player.id}&points=${pointsToTake}`)
+            .get(`/take?playerId=${player.id}&points=${pointsToTake}`)
             .end((err, res) => {
               res.should.have.status(400);
               res.body.should.be.eql(`Not enough points to take. Player with ID ${newPlayer.id} has only ${newPlayer.points}`);
@@ -143,7 +143,7 @@ describe('Players test', () => {
       player.save()
         .then(() => {
           chai.request(server)
-            .get(`/users/balance?playerId=${player.id}`)
+            .get(`/balance?playerId=${player.id}`)
             .end((err, res) => {
               res.should.have.status(200);
               res.body.should.be.a('object');
@@ -165,7 +165,7 @@ describe('Players test', () => {
       newPlayer.save()
         .then(() => {
           chai.request(server)
-            .get(`/users/fund?playerId=${newPlayer.id}&points=${pointsTofund}`)
+            .get(`/fund?playerId=${newPlayer.id}&points=${pointsTofund}`)
             .end((err, res) => {
               res.should.have.status(200);
               res.body.should.be.a('object');
@@ -184,7 +184,7 @@ describe('Players test', () => {
       newPlayer.save()
         .then(() => {
           chai.request(server)
-            .get(`/users/fund?playerId=${newPlayer.id}&points=${pointsToFund}`)
+            .get(`/fund?playerId=${newPlayer.id}&points=${pointsToFund}`)
             .end((err, res) => {
               res.should.have.status(422);
               done();
@@ -211,7 +211,7 @@ describe('Players test', () => {
         .then(() => newPlayer.save())
         .then(() => {
           chai.request(server)
-            .get(`/users/joinTournament?tournamentId=${tournament.id}&playerId=${newPlayer.id}`)
+            .get(`/joinTournament?tournamentId=${tournament.id}&playerId=${newPlayer.id}`)
             .end((err, res) => {
               res.should.have.status(201);
               res.body.should.have.property('betSum').eql(tournament.deposit);
@@ -231,7 +231,7 @@ describe('Players test', () => {
         .then(() => newPlayer.save())
         .then(() => {
           chai.request(server)
-            .get(`/users/joinTournament?playerId=${newPlayer.id}`)
+            .get(`/joinTournament?playerId=${newPlayer.id}`)
             .end((err, res) => {
               res.should.have.status(422);
               done();
@@ -247,7 +247,7 @@ describe('Players test', () => {
         .then(() => newPlayer.save())
         .then(() => {
           chai.request(server)
-            .get(`/users/joinTournament?tournamentId=${tournament.id}`)
+            .get(`/joinTournament?tournamentId=${tournament.id}`)
             .end((err, res) => {
               res.should.have.status(422);
               done();
@@ -262,7 +262,7 @@ describe('Players test', () => {
       newPlayer.save()
         .then(() => {
           chai.request(server)
-            .get(`/users/joinTournament?tournamentId=${tournament.id}&playerId=${newPlayer.id}`)
+            .get(`/joinTournament?tournamentId=${tournament.id}&playerId=${newPlayer.id}`)
             .end((err, res) => {
               res.should.have.status(404);
               done();
@@ -277,7 +277,7 @@ describe('Players test', () => {
       tournament.save()
         .then(() => {
           chai.request(server)
-            .get(`/users/joinTournament?tournamentId=${tournament.id}&playerId=${newPlayer.id}`)
+            .get(`/joinTournament?tournamentId=${tournament.id}&playerId=${newPlayer.id}`)
             .end((err, res) => {
               res.should.have.status(404);
               done();
@@ -293,7 +293,7 @@ describe('Players test', () => {
         .then(() => newPlayer.save())
         .then(() => {
           chai.request(server)
-            .get(`/users/joinTournament?tournamentId=${tournament.id}&playerId=${newPlayer.id}`)
+            .get(`/joinTournament?tournamentId=${tournament.id}&playerId=${newPlayer.id}`)
             .end((err, res) => {
               res.should.have.status(400);
               res.body.should.be.eql('Not enough points to enter. Maybe you want to ask someone to lend you some points?');
@@ -332,7 +332,7 @@ describe('/GET /users/joinTournament', () => {
       .then(() => newPlayer.save())
       .then(() => {
         chai.request(server)
-          .get(`/users/joinTournament?tournamentId=${firstTournament.id}&playerId=${newPlayer.id}`)
+          .get(`/joinTournament?tournamentId=${firstTournament.id}&playerId=${newPlayer.id}`)
           .end((err, res) => {
             res.should.have.status(201);
             res.body.should.have.property('betSum').eql(firstTournament.deposit);
@@ -345,7 +345,7 @@ describe('/GET /users/joinTournament', () => {
   });
   it('it should fail to join player to tournament twice', (done) => {
     chai.request(server)
-      .get(`/users/joinTournament?tournamentId=${firstTournament.id}&playerId=${newPlayer.id}`)
+      .get(`/joinTournament?tournamentId=${firstTournament.id}&playerId=${newPlayer.id}`)
       .end((err, res) => {
         res.should.have.status(400);
         res.body.should.be.eql('Player is already registered in this game');
@@ -356,7 +356,7 @@ describe('/GET /users/joinTournament', () => {
     secondTournament.save()
       .then(() => {
         chai.request(server)
-          .get(`/users/joinTournament?tournamentId=${secondTournament.id}&playerId=${newPlayer.id}`)
+          .get(`/joinTournament?tournamentId=${secondTournament.id}&playerId=${newPlayer.id}`)
           .end((err, res) => {
             res.should.have.status(201);
             res.body.should.have.property('betSum').eql(secondTournament.deposit);
@@ -371,7 +371,7 @@ describe('/GET /users/joinTournament', () => {
     thirdTournament.save()
       .then(() => {
         chai.request(server)
-          .get(`/users/joinTournament?tournamentId=${thirdTournament.id}&playerId=${newPlayer.id}`)
+          .get(`/joinTournament?tournamentId=${thirdTournament.id}&playerId=${newPlayer.id}`)
           .end((err, res) => {
             res.should.have.status(400);
             res.body.should.be.eql('Player can consist in two games at the same time only. Please wait for other games to be finished.');
@@ -418,7 +418,7 @@ describe('Users test, prize sharing test', () => {
       .then(() => forthPlayer.save())
       .then(() => {
         chai.request(server)
-          .get(`/users/joinTournament?tournamentId=${newTournament.id}&playerId=${firstPlayer.id}`)
+          .get(`/joinTournament?tournamentId=${newTournament.id}&playerId=${firstPlayer.id}`)
           .end((err, res) => {
             res.should.have.status(201);
             res.body.should.have.property('betSum').eql(newTournament.deposit);
@@ -433,7 +433,7 @@ describe('Users test, prize sharing test', () => {
     const balanceShouldBe = firstPlayer.points - newTournament.deposit;
     it('should get updated balance of player', (done) => {
       chai.request(server)
-        .get(`/users/balance?playerId=${firstPlayer.id}`)
+        .get(`/balance?playerId=${firstPlayer.id}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -446,7 +446,7 @@ describe('Users test, prize sharing test', () => {
 
   it('it should fail join second player to tournament, because of lack of points', (done) => {
     chai.request(server)
-      .get(`/users/joinTournament?tournamentId=${newTournament.id}&playerId=${secondPlayer.id}`)
+      .get(`/joinTournament?tournamentId=${newTournament.id}&playerId=${secondPlayer.id}`)
       .end((err, res) => {
         res.should.have.status(400);
         res.body.should.be.eql('Not enough points to enter. Maybe you want to ask someone to lend you some points?');
@@ -455,7 +455,7 @@ describe('Users test, prize sharing test', () => {
   });
   it('it should join second player to tournament with backers', (done) => {
     chai.request(server)
-      .get(`/users/joinTournament?tournamentId=${newTournament.id}&playerId=${secondPlayer.id}&backerId=${thirdPlayer.id}&backerId=${forthPlayer.id}`)
+      .get(`/joinTournament?tournamentId=${newTournament.id}&playerId=${secondPlayer.id}&backerId=${thirdPlayer.id}&backerId=${forthPlayer.id}`)
       .end((err, res) => {
         res.should.have.status(201);
         res.body.should.have.property('betSum').eql(secondPlayer.points);
@@ -480,7 +480,7 @@ describe('Users test, prize sharing test', () => {
     anotherTournament.save()
       .then(() => {
         chai.request(server)
-          .get(`/users/joinTournament?tournamentId=${anotherTournament.id}&playerId=${firstPlayer.id}`)
+          .get(`/joinTournament?tournamentId=${anotherTournament.id}&playerId=${firstPlayer.id}`)
           .end((err, res) => {
             res.should.have.status(400);
             res.body.should.be.eql('Not enough points to enter. Maybe you want to ask someone to lend you some points?');

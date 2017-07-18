@@ -3,7 +3,7 @@ const UsersRes = require('../resources/UsersResource');
 
 const router = express.Router();
 
-router.get('/', UsersRes.readAll.bind(UsersRes));
+router.get('/users', UsersRes.readAll.bind(UsersRes));
 router.get('/new', UsersRes.create.bind(UsersRes));
 router.get('/take', UsersRes.take.bind(UsersRes));
 router.get('/fund', UsersRes.fund.bind(UsersRes));

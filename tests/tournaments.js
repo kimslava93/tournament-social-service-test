@@ -48,7 +48,7 @@ describe('Tournaments test', () => {
         deposit: 100,
       };
       chai.request(server)
-        .get(`/tournaments/announceTournament?tournamentId=${newTournament.id}&deposit=${newTournament.deposit}`)
+        .get(`/announceTournament?tournamentId=${newTournament.id}&deposit=${newTournament.deposit}`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.have.property('id').eql(newTournament.id);
@@ -62,7 +62,7 @@ describe('Tournaments test', () => {
         deposit: 100,
       };
       chai.request(server)
-        .get(`/tournaments/announceTournament?&deposit=${newTournament.deposit}`)
+        .get(`/announceTournament?&deposit=${newTournament.deposit}`)
         .end((err, res) => {
           res.should.have.status(422);
           res.body.should.be.eql('Please, provide correct input data');
@@ -75,7 +75,7 @@ describe('Tournaments test', () => {
         deposit: 100,
       };
       chai.request(server)
-        .get(`/tournaments/announceTournament?tournamentId=${newTournament.id}`)
+        .get(`/announceTournament?tournamentId=${newTournament.id}`)
         .end((err, res) => {
           res.should.have.status(422);
           res.body.should.be.eql('Please, provide correct input data');
@@ -100,7 +100,7 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should announce new tournament', (done) => {
     chai.request(server)
-      .get(`/tournaments/announceTournament?tournamentId=${newTournament.id}&deposit=${newTournament.deposit}`)
+      .get(`/announceTournament?tournamentId=${newTournament.id}&deposit=${newTournament.deposit}`)
       .end((err, res) => {
         res.should.have.status(201);
         res.body.should.have.property('id').eql(newTournament.id);
@@ -110,7 +110,7 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should fail to announce new tournament with existing id', (done) => {
     chai.request(server)
-      .get(`/tournaments/announceTournament?tournamentId=${newTournament.id}&deposit=${newTournament.deposit}`)
+      .get(`/announceTournament?tournamentId=${newTournament.id}&deposit=${newTournament.deposit}`)
       .end((err, res) => {
         res.should.have.status(409);
         res.body.should.be.eql('There is tournament created with such id. Please choose another one.');
@@ -119,7 +119,7 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should fetch details about tournament', (done) => {
     chai.request(server)
-      .get(`/tournaments/get-tournament-details?tournamentId=${newTournament.id}`)
+      .get(`/get-tournament-details?tournamentId=${newTournament.id}`)
       .end((err, res) => {
         res.should.have.status(200);
         res.body.should.have.property('tournamentId').eql(newTournament.id);
@@ -134,7 +134,7 @@ describe('Tournaments test, logic test', () => {
     newPlayer.save()
       .then(() => {
         chai.request(server)
-          .get(`/users/joinTournament?tournamentId=${newTournament.id}&playerId=${newPlayer.id}`)
+          .get(`/joinTournament?tournamentId=${newTournament.id}&playerId=${newPlayer.id}`)
           .end((err, res) => {
             res.should.have.status(201);
             res.body.should.have.property('betSum').eql(newTournament.deposit);
@@ -147,7 +147,7 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should fetch details about tournament after player joined', (done) => {
     chai.request(server)
-      .get(`/tournaments/get-tournament-details?tournamentId=${newTournament.id}`)
+      .get(`/get-tournament-details?tournamentId=${newTournament.id}`)
       .end((err, res) => {
         res.should.have.status(200);
         res.body.should.have.property('tournamentId').eql(newTournament.id);
@@ -164,7 +164,7 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should fail to fetch details about tournament', (done) => {
     chai.request(server)
-      .get('/tournaments/get-tournament-details')
+      .get('/get-tournament-details')
       .end((err, res) => {
         res.should.have.status(422);
         res.body.should.be.eql('Wrong input data. No tournament ID was given.');
@@ -173,7 +173,7 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should fail to finish tournament, because of lack of players', (done) => {
     chai.request(server)
-      .get(`/tournaments/close-tournament?tournamentId=${newTournament.id}`)
+      .get(`/close-tournament?tournamentId=${newTournament.id}`)
       .end((err, res) => {
         res.should.have.status(400);
         res.body.should.be.eql('Not enough players were found in this tournament. Maybe you want to cancel this tournament instead.');
@@ -184,7 +184,7 @@ describe('Tournaments test, logic test', () => {
     anotherPlayer.save()
       .then(() => {
         chai.request(server)
-          .get(`/users/joinTournament?tournamentId=${newTournament.id}&playerId=${anotherPlayer.id}`)
+          .get(`/joinTournament?tournamentId=${newTournament.id}&playerId=${anotherPlayer.id}`)
           .end((err, res) => {
             res.should.have.status(201);
             res.body.should.have.property('betSum').eql(newTournament.deposit);
@@ -197,7 +197,7 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should finish tournament', (done) => {
     chai.request(server)
-      .get(`/tournaments/close-tournament?tournamentId=${newTournament.id}`)
+      .get(`/close-tournament?tournamentId=${newTournament.id}`)
       .end((err, res) => {
         res.should.have.status(200);
         res.body.should.have.property('finishedTournament').should.be.a('object');
@@ -210,7 +210,7 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should fail to finish closed tournament', (done) => {
     chai.request(server)
-      .get(`/tournaments/close-tournament?tournamentId=${newTournament.id}`)
+      .get(`/close-tournament?tournamentId=${newTournament.id}`)
       .end((err, res) => {
         res.should.have.status(404);
         res.body.should.be.eql('No opened tournament was found. Probably this tournament was finished or canceled');

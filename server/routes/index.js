@@ -6,8 +6,8 @@ const tournamentsRoutes = require('./tournaments');
 const router = express.Router();
 
 router.get('/', MainPageRes.getMainPage);
-router.use('/users', usersRoutes);
-router.use('/tournaments', tournamentsRoutes);
+router.use('/', usersRoutes);
+router.use('/', tournamentsRoutes);
 
 router.get('/error', (req, res) => res.render('error'));
 
