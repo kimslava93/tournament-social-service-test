@@ -6,6 +6,15 @@ const logger = require('../../bin/logger');
 const Resource = require('../services/Resource');
 
 class PlayersResource extends Resource {
+  constructor(model) {
+    super(model);
+    this.readAll = this.readAll.bind(this);
+    this.create = this.create.bind(this);
+    this.take = this.take.bind(this);
+    this.join = this.join.bind(this);
+    this.balance = this.balance.bind(this);
+  }
+
   readAll(req, res) {
     return super.getAllRecords()
       .then(players => res.status(200).json(players))
@@ -78,7 +87,7 @@ class PlayersResource extends Resource {
       }, res);
     }
     let player = {};
-    return super.getOneRecord({ id: playerId })
+    return super.getOneRecord({ id: playerId }, PlayerModel)
       .then((foundPlayer) => {
         if (!foundPlayer) {
           const newPlayer = {
@@ -100,8 +109,9 @@ class PlayersResource extends Resource {
   }
 
   getPlayersAvailablePoints(playerData) {
+    const self = this;
     let bookedSum = 0;
-    return super.getAllRecords({ playerId: playerData.id }, GameModel)
+    return self.getAllRecords({ playerId: playerData.id }, GameModel)
       .then((asParticipantInGames) => {
         if (asParticipantInGames && asParticipantInGames.length > 0) {
           asParticipantInGames.forEach((game) => {

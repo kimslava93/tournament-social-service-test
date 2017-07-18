@@ -160,12 +160,12 @@ describe('Players test', () => {
         id: 1,
         points: 500,
       });
-      const pointsTofund = 1000;
-      const expectedSum = newPlayer.points + pointsTofund;
+      const pointsToFund = 1000;
+      const expectedSum = newPlayer.points + pointsToFund;
       newPlayer.save()
         .then(() => {
           chai.request(server)
-            .get(`/fund?playerId=${newPlayer.id}&points=${pointsTofund}`)
+            .get(`/fund?playerId=${newPlayer.id}&points=${pointsToFund}`)
             .end((err, res) => {
               res.should.have.status(200);
               res.body.should.be.a('object');

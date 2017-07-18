@@ -3,6 +3,10 @@ const RequestService = require('../services/RequestService');
 class Resource {
   constructor(model) {
     this.Model = model;
+    this.getOneRecord = this.getOneRecord.bind(this);
+    this.getAllRecords = this.getAllRecords.bind(this);
+    this.getManyRecords = this.getManyRecords.bind(this);
+    this.createModel = this.createModel.bind(this);
   }
 
   getAllRecords(filter = {}, model, fields = {}) {

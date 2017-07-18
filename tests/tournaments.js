@@ -119,7 +119,7 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should fetch details about tournament', (done) => {
     chai.request(server)
-      .get(`/get-tournament-details?tournamentId=${newTournament.id}`)
+      .get(`/getTournamentDetails?tournamentId=${newTournament.id}`)
       .end((err, res) => {
         res.should.have.status(200);
         res.body.should.have.property('tournamentId').eql(newTournament.id);
@@ -147,7 +147,7 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should fetch details about tournament after player joined', (done) => {
     chai.request(server)
-      .get(`/get-tournament-details?tournamentId=${newTournament.id}`)
+      .get(`/getTournamentDetails?tournamentId=${newTournament.id}`)
       .end((err, res) => {
         res.should.have.status(200);
         res.body.should.have.property('tournamentId').eql(newTournament.id);
@@ -164,7 +164,7 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should fail to fetch details about tournament', (done) => {
     chai.request(server)
-      .get('/get-tournament-details')
+      .get('/getTournamentDetails')
       .end((err, res) => {
         res.should.have.status(422);
         res.body.should.be.eql('Wrong input data. No tournament ID was given.');
@@ -173,7 +173,8 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should fail to finish tournament, because of lack of players', (done) => {
     chai.request(server)
-      .get(`/close-tournament?tournamentId=${newTournament.id}`)
+      .post('/resultTournament')
+      .send({ tournamentId: newTournament.id })
       .end((err, res) => {
         res.should.have.status(400);
         res.body.should.be.eql('Not enough players were found in this tournament. Maybe you want to cancel this tournament instead.');
@@ -197,7 +198,8 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should finish tournament', (done) => {
     chai.request(server)
-      .get(`/close-tournament?tournamentId=${newTournament.id}`)
+      .post('/resultTournament')
+      .send({ tournamentId: newTournament.id })
       .end((err, res) => {
         res.should.have.status(200);
         res.body.should.have.property('finishedTournament').should.be.a('object');
@@ -210,7 +212,8 @@ describe('Tournaments test, logic test', () => {
   });
   it('it should fail to finish closed tournament', (done) => {
     chai.request(server)
-      .get(`/close-tournament?tournamentId=${newTournament.id}`)
+      .post('/resultTournament')
+      .send({ tournamentId: newTournament.id })
       .end((err, res) => {
         res.should.have.status(404);
         res.body.should.be.eql('No opened tournament was found. Probably this tournament was finished or canceled');

@@ -8,6 +8,16 @@ const PlayerModel = require('../models/PlayerModel');
 const RequestService = require('../services/RequestService');
 
 class Tournaments extends Resource {
+  constructor(model) {
+    super(model);
+    this.getAll = this.getAll.bind(this);
+    this.create = this.create.bind(this);
+    this.getResults = this.getResults.bind(this);
+    this.closeTournament = this.closeTournament.bind(this);
+    this.getLatestGames = this.getLatestGames.bind(this);
+    this.cancelTournament = this.cancelTournament.bind(this);
+  }
+
   getGameDetailsPromisesArray(tournamentsToLook) {
     const self = this;
     const promisesArray = [];
@@ -157,7 +167,7 @@ class Tournaments extends Resource {
   closeTournament(req, res) {
     const self = this;
     let winnerModel;
-    const { tournamentId } = req.query;
+    const { tournamentId } = req.body;
     const filter = {
       id: tournamentId,
       status: constants.TOURNAMENT_TABLE_STATUSES.OPENED,

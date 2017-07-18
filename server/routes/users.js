@@ -3,11 +3,11 @@ const UsersRes = require('../resources/UsersResource');
 
 const router = express.Router();
 
-router.get('/users', UsersRes.readAll.bind(UsersRes));
-router.get('/new', UsersRes.create.bind(UsersRes));
-router.get('/take', UsersRes.take.bind(UsersRes));
-router.get('/fund', UsersRes.fund.bind(UsersRes));
-router.get('/joinTournament', UsersRes.join.bind(UsersRes));
-router.get('/balance', UsersRes.balance.bind(UsersRes));
+router.get('/users', UsersRes.readAll);
+router.get('/new', UsersRes.create);
+router.get('/take', UsersRes.take);
+router.get('/fund', UsersRes.fund);
+router.get('/joinTournament', UsersRes.join);
+router.get('/balance', UsersRes.balance);
 
 module.exports = router;
