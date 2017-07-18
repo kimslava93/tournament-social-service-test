@@ -1,6 +1,5 @@
 # Created by .ignore support plugin (hsz.mobi)
 ### Node template
-/public/dist
 # Logs
 logs
 *.log
@@ -60,11 +59,4 @@ typings/
 # dotenv environment variables file
 .env
 
-### Example user template template
-### Example user template
 
-# IntelliJ project files
-.idea
-*.iml
-out
-gen
