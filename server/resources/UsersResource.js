@@ -3,6 +3,7 @@ const GameModel = require('../models/GameModel');
 const TournamentModel = require('../models/TournamentModel');
 const RequestService = require('../services/RequestService');
 const logger = require('../../bin/logger');
+const constants = require('../../bin/constants');
 const Resource = require('../services/Resource');
 
 class PlayersResource extends Resource {
@@ -10,7 +11,9 @@ class PlayersResource extends Resource {
     super(model);
     this.readAll = this.readAll.bind(this);
     this.create = this.create.bind(this);
+    this.createWorker = this.createWorker.bind(this);
     this.take = this.take.bind(this);
+    this.fund = this.fund.bind(this);
     this.join = this.join.bind(this);
     this.balance = this.balance.bind(this);
   }
@@ -111,19 +114,37 @@ class PlayersResource extends Resource {
   getPlayersAvailablePoints(playerData) {
     const self = this;
     let bookedSum = 0;
-    return self.getAllRecords({ playerId: playerData.id }, GameModel)
+    /*
+     * TODO Main player is not getting points changed
+     * */
+    const filter = { status: constants.TOURNAMENT_TABLE_STATUSES.OPENED };
+    const tournamentsProjection = { tournamentId: 1 };
+    let openedTournamentIds = [];
+    return self.getAllRecords(filter, TournamentModel, tournamentsProjection)
+      .then((openedTournaments) => {
+        openedTournamentIds = openedTournaments.map(openedTournament => openedTournament.id);
+
+        return self.getAllRecords({
+          $and: [{ playerId: playerData.id },
+            { tournamentId: { $in: openedTournamentIds } }],
+        }, GameModel);
+      })
       .then((asParticipantInGames) => {
         if (asParticipantInGames && asParticipantInGames.length > 0) {
           asParticipantInGames.forEach((game) => {
             bookedSum += game.betSum;
           });
         }
-        const parsedPlayerId = parseInt(playerData.id, 10);
-        const projection = {
-          'ownedSum.$': parsedPlayerId,
-          'ownedSum.sum': 1,
+        const gameProjection = {
+          tournamentId: 1,
+          'ownedSum.$': playerData.id,
         };
-        return super.getAllRecords({ 'ownedSum.playerId': parsedPlayerId }, GameModel, projection);
+        const gameFilter = {
+          $and: [
+            { 'ownedSum.playerId': playerData.id },
+            { tournamentId: { $in: openedTournamentIds } }],
+        };
+        return super.getAllRecords(gameFilter, GameModel, gameProjection);
       })
       .then((asBackerInGames) => {
         if (asBackerInGames && asBackerInGames.length > 0) {
@@ -227,10 +248,7 @@ class PlayersResource extends Resource {
         return backer.points < minimumPointsToHave;
       });
       if (notEnoughBalancePlayer) {
-        throw new Error({
-          message: 'Some of backers do not have required sum to support player, Please choose another one',
-          code: 400,
-        });
+        throw new Error('Some of backers do not have required sum to support player, Please choose another one');
       }
       return ownedSum;
     }
