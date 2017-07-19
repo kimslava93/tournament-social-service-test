@@ -1,15 +1,13 @@
 const Promise = require('bluebird');
 
 const constants = require('../../bin/constants');
-const Resource = require('../services/Resource');
 const TournamentModel = require('../models/TournamentModel');
 const GameModel = require('../models/GameModel');
 const PlayerModel = require('../models/PlayerModel');
 const RequestService = require('../services/RequestService');
 
-class Tournaments extends Resource {
-  constructor(model) {
-    super(model);
+class TournamentsResource {
+  constructor() {
     this.getAll = this.getAll.bind(this);
     this.create = this.create.bind(this);
     this.getResults = this.getResults.bind(this);
@@ -18,12 +16,11 @@ class Tournaments extends Resource {
     this.cancelTournament = this.cancelTournament.bind(this);
   }
 
-  getGameDetailsPromisesArray(tournamentsToLook) {
-    const self = this;
+  static getGameDetailsPromisesArray(tournamentsToLook) {
     const promisesArray = [];
 
     function getGameDetailsForTournament(tournament) {
-      return self.getAllRecords({ tournamentId: tournament.id }, GameModel)
+      return GameModel.find({ tournamentId: tournament.id })
         .then((games) => {
           if (!games) {
             return Promise.resolve('No players connected to this tournament');
@@ -51,23 +48,24 @@ class Tournaments extends Resource {
     return promisesArray;
   }
 
-  getAll(req, res) {
+  static getAll(req, res) {
     /*
      * TODO think about working on big amount of tournaments, for example pagination
      * */
     let currentTournaments = [];
 
-    return super.getAllRecords()
+    return TournamentModel.find({})
       .then((foundTournaments) => {
         currentTournaments = foundTournaments;
-        const fetchGamesDetailsPromisesArray = this.getGameDetailsPromisesArray(currentTournaments);
+        const fetchGamesDetailsPromisesArray =
+          TournamentsResource.getGameDetailsPromisesArray(currentTournaments);
         return Promise.all(fetchGamesDetailsPromisesArray);
       })
       .then(tournaments => res.status(200).json(tournaments))
       .catch(err => RequestService.sendErrorToClient(err, res));
   }
 
-  create(req, res) {
+  static create(req, res) {
     const { tournamentId, deposit } = req.query;
 
     if (!tournamentId || !deposit || deposit < 0) {
@@ -77,20 +75,19 @@ class Tournaments extends Resource {
       }, res);
     }
 
-    return super.getOneRecord({ id: tournamentId })
+    return TournamentModel.findOne({ id: tournamentId })
       .then((tournamentWithSameId) => {
         if (tournamentWithSameId) {
           return RequestService.failWithError('There is tournament created with such id. Please choose another one.', 409);
         }
-        return super.createModel({ id: tournamentId, deposit });
+        return new TournamentModel({ id: tournamentId, deposit }).save();
       })
       .then(createdTournament => res.status(201).json(createdTournament))
       .catch(err => RequestService.sendErrorToClient(err, res));
   }
 
-  getResults(req, res) {
+  static getResults(req, res) {
     const { tournamentId } = req.query;
-    const self = this;
     if (!tournamentId) {
       return RequestService.sendErrorToClient({
         message: 'Wrong input data. No tournament ID was given.',
@@ -99,13 +96,13 @@ class Tournaments extends Resource {
     }
 
     function getResultsAccordingToInputData() {
-      return self.getOneRecord({ id: tournamentId })
+      return TournamentModel.findOne({ id: tournamentId })
         .then((tournament) => {
           if (!tournament) {
             return RequestService.failWithError('There is no such tournament created with such id');
           }
           const tournamentsArray = [tournament];
-          return self.getGameDetailsPromisesArray(tournamentsArray);
+          return TournamentsResource.getGameDetailsPromisesArray(tournamentsArray);
         })
         .then(promisesArray => Promise.all(promisesArray))
         .then(tournaments => tournaments[0]);
@@ -116,18 +113,16 @@ class Tournaments extends Resource {
       .catch(err => RequestService.sendErrorToClient(err, res));
   }
 
-  getLatestGames(req, res) {
-    const self = this;
-
+  static getLatestGames(req, res) {
     function getLatestFinishedGames() {
       const LIMIT_RECORDS = 10;
-      return self.getManyRecords({ status: constants.TOURNAMENT_TABLE_STATUSES.FINISHED },
-        TournamentModel, LIMIT_RECORDS)
+      return TournamentModel.find({ status: constants.TOURNAMENT_TABLE_STATUSES.FINISHED })
+        .limit(LIMIT_RECORDS)
         .then((tournaments) => {
           if (!tournaments) {
             return RequestService.failWithError('No finished tournaments were found.', 404);
           }
-          return self.getGameDetailsPromisesArray(tournaments);
+          return TournamentsResource.getGameDetailsPromisesArray(tournaments);
         });
     }
 
@@ -136,7 +131,7 @@ class Tournaments extends Resource {
       .catch(err => RequestService.sendErrorToClient(err, res));
   }
 
-  cancelTournament(req, res) {
+  static cancelTournament(req, res) {
     const { tournamentId } = req.query;
 
     function closeTournament() {
@@ -164,8 +159,7 @@ class Tournaments extends Resource {
       .catch(err => RequestService.sendErrorToClient(err, res));
   }
 
-  closeTournament(req, res) {
-    const self = this;
+  static closeTournament(req, res) {
     let winnerModel;
     const { tournamentId } = req.body;
     const filter = {
@@ -180,7 +174,7 @@ class Tournaments extends Resource {
     }
 
     function checkIfOpened() {
-      return self.getOneRecord(filter)
+      return TournamentModel.findOne(filter)
         .then((foundTournament) => {
           if (!foundTournament) {
             return RequestService.failWithError('No opened tournament was found. Probably this tournament was finished or canceled', 404);
@@ -194,7 +188,7 @@ class Tournaments extends Resource {
     }
 
     function chooseAWinner() {
-      return self.getAllRecords({ tournamentId }, GameModel)
+      return GameModel.find({ tournamentId }, GameModel)
         .then((playersInGame) => {
           if (!playersInGame || playersInGame.length <= 1) {
             return RequestService.failWithError('Not enough players were found in this tournament. Maybe you want to cancel this tournament instead.', 400);
@@ -207,7 +201,7 @@ class Tournaments extends Resource {
     }
 
     function addPointsToPlayer(playerId, sumToAdd) {
-      return self.getOneRecord({ id: playerId }, PlayerModel)
+      return PlayerModel.findOne({ id: playerId })
         .then((participantModel) => {
           if (!participantModel) {
             return RequestService.failWithError('Some players were not found, and didn\'t receive a prize', 404);
@@ -256,7 +250,7 @@ class Tournaments extends Resource {
     }
 
     function sharePrize() {
-      return self.getAllRecords({ tournamentId }, GameModel)
+      return GameModel.find({ tournamentId })
         .then((allParticipants) => {
           let promisesArray = [];
 
@@ -302,4 +296,4 @@ class Tournaments extends Resource {
       .catch(err => RequestService.sendErrorToClient(err, res));
   }
 }
-module.exports = new Tournaments(TournamentModel);
+module.exports = TournamentsResource;
