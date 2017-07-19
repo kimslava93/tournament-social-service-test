@@ -12,3 +12,4 @@
 - GET `/joinTournament?tournamentId=1&playerId=P1&backerId=P2&backerId=P3` - Join player into a tournament and is he backed by a set of backers
 - POST `/resultTournament` - Result tournament winners and prizes
 - GET `/balance?playerId=P1` - Player balance
+- GET `/getTournamentDetails?tournamentId=1` - Get details about tournament

@@ -118,7 +118,7 @@ class PlayersResource extends Resource {
      * TODO Main player is not getting points changed
      * */
     const filter = { status: constants.TOURNAMENT_TABLE_STATUSES.OPENED };
-    const tournamentsProjection = { tournamentId: 1 };
+    const tournamentsProjection = { id: 1 };
     let openedTournamentIds = [];
     return self.getAllRecords(filter, TournamentModel, tournamentsProjection)
       .then((openedTournaments) => {
@@ -194,7 +194,8 @@ class PlayersResource extends Resource {
 
     function backersToArray() {
       if (backerId) {
-        return [...backerId];
+        const array = [...backerId];
+        return array.filter((item, index) => array.indexOf(item) === index);
       }
       return [];
     }
