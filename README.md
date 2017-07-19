@@ -4,7 +4,10 @@
 `docker-compose build`
 `docker-compose up`
 
-## available routes
+##Description
+    Api allows announce tournament and find a random winner, after more than 2 players are registered in the game.
+
+## Available routes
 
 - GET `/take?playerId=P1&points=300` - takes 300 points from player P1 account
 - GET `/fund?playerId=P2&points=300` - funds player P2 with 300 points

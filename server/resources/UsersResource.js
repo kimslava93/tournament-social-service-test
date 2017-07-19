@@ -4,11 +4,9 @@ const TournamentModel = require('../models/TournamentModel');
 const RequestService = require('../services/RequestService');
 const logger = require('../../bin/logger');
 const constants = require('../../bin/constants');
-const Resource = require('../services/Resource');
 
-class PlayersResource extends Resource {
-  constructor(model) {
-    super(model);
+class PlayersResource {
+  constructor() {
     this.readAll = this.readAll.bind(this);
     this.create = this.create.bind(this);
     this.createWorker = this.createWorker.bind(this);
@@ -18,13 +16,13 @@ class PlayersResource extends Resource {
     this.balance = this.balance.bind(this);
   }
 
-  readAll(req, res) {
-    return super.getAllRecords()
+  static readAll(req, res) {
+    return PlayerModel.find({})
       .then(players => res.status(200).json(players))
       .catch(err => RequestService.sendErrorToClient(err, res));
   }
 
-  create(req, res) {
+  static create(req, res) {
     const { id, points } = req.query;
     if (!id || !points || points < 0) {
       return RequestService.sendErrorToClient({
@@ -36,22 +34,23 @@ class PlayersResource extends Resource {
       id,
       points,
     };
-    return this.createWorker(newPlayer)
+    return PlayersResource.createWorker(newPlayer)
       .then(result => res.status(201).json({ playerId: result.id, points: result.points }))
       .catch(err => RequestService.sendErrorToClient(err, res));
   }
 
-  createWorker(newPlayer) {
-    return super.getOneRecord({ id: newPlayer.id })
+  static createWorker(newPlayerData) {
+    return PlayerModel.findOne({ id: newPlayerData.id })
       .then((playerWithTheSameId) => {
         if (playerWithTheSameId && playerWithTheSameId.length > 0) {
           return RequestService.failWithError('Player with such username already exists. Please choose another one.', 409);
         }
-        return super.createModel(newPlayer);
+        const newPlayer = new PlayerModel(newPlayerData);
+        return newPlayer.save();
       });
   }
 
-  take(req, res) {
+  static take(req, res) {
     const { playerId, points } = req.query;
 
     if (!playerId || !points || points < 0) {
@@ -61,7 +60,7 @@ class PlayersResource extends Resource {
       }, res);
     }
 
-    return super.getOneRecord({ id: playerId })
+    return PlayerModel.findOne({ id: playerId })
       .then((foundPlayer) => {
         if (!foundPlayer) {
           return RequestService.failWithError('No such player was found', 404);
@@ -80,7 +79,7 @@ class PlayersResource extends Resource {
       .catch(err => RequestService.sendErrorToClient(err, res));
   }
 
-  fund(req, res) {
+  static fund(req, res) {
     const { playerId, points } = req.query;
     const parsedBalance = Number(points);
     if (!playerId || !points || points <= 0 || !parsedBalance) {
@@ -90,14 +89,14 @@ class PlayersResource extends Resource {
       }, res);
     }
     let player = {};
-    return super.getOneRecord({ id: playerId }, PlayerModel)
+    return PlayerModel.findOne({ id: playerId })
       .then((foundPlayer) => {
         if (!foundPlayer) {
           const newPlayer = {
             id: playerId,
             points,
           };
-          return this.createWorker(newPlayer);
+          return PlayersResource.createWorker(newPlayer);
         }
         player = foundPlayer;
         player.points = parsedBalance + player.points;
@@ -111,8 +110,7 @@ class PlayersResource extends Resource {
       .catch(err => RequestService.sendErrorToClient(err, res));
   }
 
-  getPlayersAvailablePoints(playerData) {
-    const self = this;
+  static getPlayersAvailablePoints(playerData) {
     let bookedSum = 0;
     /*
      * TODO Main player is not getting points changed
@@ -120,14 +118,16 @@ class PlayersResource extends Resource {
     const filter = { status: constants.TOURNAMENT_TABLE_STATUSES.OPENED };
     const tournamentsProjection = { id: 1 };
     let openedTournamentIds = [];
-    return self.getAllRecords(filter, TournamentModel, tournamentsProjection)
+    return TournamentModel.find(filter, tournamentsProjection)
       .then((openedTournaments) => {
         openedTournamentIds = openedTournaments.map(openedTournament => openedTournament.id);
-
-        return self.getAllRecords({
-          $and: [{ playerId: playerData.id },
-            { tournamentId: { $in: openedTournamentIds } }],
-        }, GameModel);
+        const gameFilter = {
+          $and: [
+            { playerId: playerData.id },
+            { tournamentId: { $in: openedTournamentIds } },
+          ],
+        };
+        return GameModel.find(gameFilter);
       })
       .then((asParticipantInGames) => {
         if (asParticipantInGames && asParticipantInGames.length > 0) {
@@ -144,7 +144,7 @@ class PlayersResource extends Resource {
             { 'ownedSum.playerId': playerData.id },
             { tournamentId: { $in: openedTournamentIds } }],
         };
-        return super.getAllRecords(gameFilter, GameModel, gameProjection);
+        return GameModel.find(gameFilter, gameProjection);
       })
       .then((asBackerInGames) => {
         if (asBackerInGames && asBackerInGames.length > 0) {
@@ -158,7 +158,7 @@ class PlayersResource extends Resource {
       });
   }
 
-  balance(req, res) {
+  static balance(req, res) {
     const { playerId } = req.query;
     if (!playerId) {
       return RequestService.sendErrorToClient({
@@ -166,12 +166,12 @@ class PlayersResource extends Resource {
         code: 422,
       }, res);
     }
-    return super.getOneRecord({ id: playerId })
+    return PlayerModel.findOne({ id: playerId })
       .then((foundPlayer) => {
         if (!foundPlayer) {
           return RequestService.failWithError('No player was found with such id', 404);
         }
-        return this.getPlayersAvailablePoints(foundPlayer);
+        return PlayersResource.getPlayersAvailablePoints(foundPlayer);
       })
       .then((result) => {
         const parsedResult = {
@@ -183,7 +183,7 @@ class PlayersResource extends Resource {
       .catch(err => RequestService.sendErrorToClient(err, res));
   }
 
-  join(req, res) {
+  static join(req, res) {
     const { tournamentId, playerId, backerId } = req.query;
     if (!tournamentId || !playerId) {
       return RequestService.sendErrorToClient({
@@ -204,10 +204,9 @@ class PlayersResource extends Resource {
 
     let tournament;
     let player;
-    const self = this;
 
     function findTournament() {
-      return self.getOneRecord({ id: tournamentId }, TournamentModel)
+      return TournamentModel.findOne({ id: tournamentId })
         .then((foundTournament) => {
           if (!foundTournament) {
             return RequestService.failWithError('Tournament wasn\'t found', 404);
@@ -218,7 +217,7 @@ class PlayersResource extends Resource {
     }
 
     function findPlayer() {
-      return self.getOneRecord({ id: playerId }, PlayerModel)
+      return PlayerModel.findOne({ id: playerId })
         .then((foundPlayer) => {
           if (!foundPlayer) {
             return RequestService.failWithError('Player wasn\'t found', 404);
@@ -229,7 +228,7 @@ class PlayersResource extends Resource {
     }
 
     function getAllBackers() {
-      return self.getAllRecords({ id: { $in: allBackersId } })
+      return PlayerModel.find({ id: { $in: allBackersId } })
         .then((foundBackers) => {
           const backersNotFound = !foundBackers || foundBackers.length === 0;
           if (backersNotFound || foundBackers.length !== allBackersId.length) {
@@ -255,7 +254,7 @@ class PlayersResource extends Resource {
     }
 
     function isPlayerConsistInOtherTournaments() {
-      return self.getAllRecords({ playerId }, GameModel)
+      return GameModel.find({ playerId })
         .then((gamesWithPlayer) => {
           if (gamesWithPlayer && gamesWithPlayer.length > 1) {
             return RequestService.failWithError('Player can consist in two games at the same time only. Please wait for other games to be finished.', 400);
@@ -272,13 +271,13 @@ class PlayersResource extends Resource {
     }
 
     function createGame(newGameParams) {
-      return self.createModel(newGameParams, GameModel);
+      return new GameModel(newGameParams).save();
     }
 
     function doAllPlayersHasEnoughPoints(playersArray, requiredPointsAmount) {
       const promisesArray = [];
       playersArray.forEach((backer) => {
-        promisesArray.push(self.getPlayersAvailablePoints(backer));
+        promisesArray.push(PlayersResource.getPlayersAvailablePoints(backer));
       });
       return Promise.all(promisesArray)
         .then((playersBalance) => {
@@ -323,7 +322,7 @@ class PlayersResource extends Resource {
     }
 
     function createGameAccordingToInputData() {
-      return self.getPlayersAvailablePoints(player)
+      return PlayersResource.getPlayersAvailablePoints(player)
         .then((pointsLeft) => {
           const playerHasNotEnoughPoints = pointsLeft < tournament.deposit;
 
@@ -346,4 +345,4 @@ class PlayersResource extends Resource {
   }
 }
 
-module.exports = new PlayersResource(PlayerModel);
+module.exports = PlayersResource;
